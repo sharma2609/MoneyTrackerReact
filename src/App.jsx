@@ -1,54 +1,73 @@
-import React, { useState, useMemo } from 'react';
-import FloatingNav from './components/FloatingNav';
-import TransactionForm from './components/TransactionForm';
-import TransactionList from './components/TransactionList';
-import Summary from './components/Summary';
-import Analysis from './components/Analysis';
-import Reports from './components/Reports';
-import Settings from './components/Settings';
-import { useLocalStorage } from './hooks/useLocalStorage';
-import './App.css';
+import { useState, useMemo, useCallback } from "react";
+import FloatingNav from "./components/FloatingNav";
+import TransactionForm from "./components/TransactionForm";
+import TransactionList from "./components/TransactionList";
+import Summary from "./components/Summary";
+import Analysis from "./components/Analysis";
+import Reports from "./components/Reports";
+import Settings from "./components/Settings";
+import { useLocalStorage } from "./hooks/useLocalStorage";
+import "./App.css";
 
 /**
  * Main App Component
  * Two-column layout: Left = Input Form, Right = Display/Navigation
+ * Optimized with useCallback for event handlers and useMemo for expensive calculations
  */
 const App = () => {
   // Persist transactions and categories in localStorage
-  const [transactions, setTransactions] = useLocalStorage('transactions', []);
-  const [categories, setCategories] = useLocalStorage('categories', [
-    'Food & Dining',
-    'Transportation',
-    'Shopping',
-    'Entertainment',
-    'Bills & Utilities',
-    'Healthcare',
-    'Salary',
-    'Investment',
-    'Other'
+  const [transactions, setTransactions] = useLocalStorage("transactions", []);
+  const [categories, setCategories] = useLocalStorage("categories", [
+    "Food & Dining",
+    "Transportation",
+    "Shopping",
+    "Entertainment",
+    "Bills & Utilities",
+    "Healthcare",
+    "Salary",
+    "Investment",
+    "Other",
   ]);
-  const [currentView, setCurrentView] = useState('overview');
+  const [currentView, setCurrentView] = useState("overview");
 
-  // Add new transaction
-  const handleAddTransaction = (transaction) => {
-    setTransactions([transaction, ...transactions]);
-  };
+  // Memoize event handlers to prevent child re-renders
+  const handleAddTransaction = useCallback(
+    (transaction) => {
+      setTransactions([transaction, ...transactions]);
+    },
+    [transactions, setTransactions]
+  );
 
-  // Delete transaction
-  const handleDeleteTransaction = (id) => {
-    setTransactions(transactions.filter(t => t.id !== id));
-  };
+  const handleDeleteTransaction = useCallback(
+    (id) => {
+      setTransactions(transactions.filter((t) => t.id !== id));
+    },
+    [transactions, setTransactions]
+  );
 
-  // Clear all transactions
-  const handleClearHistory = () => {
+  const handleClearHistory = useCallback(() => {
     setTransactions([]);
-  };
+  }, [setTransactions]);
+
+  const handleNavigate = useCallback((view) => {
+    setCurrentView(view);
+  }, []);
 
   // Get current month's name
   const currentMonthName = useMemo(() => {
     const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
     ];
     return months[new Date().getMonth()];
   }, []);
@@ -56,17 +75,19 @@ const App = () => {
   // Filter current month transactions
   const currentMonthTransactions = useMemo(() => {
     const now = new Date();
-    return transactions.filter(t => {
+    return transactions.filter((t) => {
       const date = new Date(t.date);
-      return date.getMonth() === now.getMonth() && 
-             date.getFullYear() === now.getFullYear();
+      return (
+        date.getMonth() === now.getMonth() &&
+        date.getFullYear() === now.getFullYear()
+      );
     });
   }, [transactions]);
 
-  // Render right column content based on current view
-  const renderRightColumn = () => {
+  // Memoize render function to prevent recreation
+  const renderRightColumn = useCallback(() => {
     switch (currentView) {
-      case 'overview':
+      case "overview":
         return (
           <>
             <div className="view-header">
@@ -74,56 +95,60 @@ const App = () => {
               <p className="view-subtitle">Current month at a glance</p>
             </div>
             <Summary transactions={currentMonthTransactions} />
-            <TransactionList 
+            <TransactionList
               transactions={currentMonthTransactions}
               onDeleteTransaction={handleDeleteTransaction}
             />
           </>
         );
-      
-      case 'analysis':
+
+      case "analysis":
         return <Analysis transactions={transactions} />;
-      
-      case 'reports':
+
+      case "reports":
         return <Reports transactions={transactions} />;
-      
-      case 'settings':
+
+      case "settings":
         return (
-          <Settings 
+          <Settings
             categories={categories}
             onUpdateCategories={setCategories}
             onClearHistory={handleClearHistory}
           />
         );
-      
+
       default:
         return null;
     }
-  };
+  }, [
+    currentView,
+    currentMonthName,
+    currentMonthTransactions,
+    handleDeleteTransaction,
+    transactions,
+    categories,
+    setCategories,
+    handleClearHistory,
+  ]);
 
   return (
     <div className="app">
       <header className="app-header">
         <h1 className="app-title">Money Tracker</h1>
       </header>
-      
+
       <div className="main-content">
         <div className="left-column">
-          <TransactionForm 
+          <TransactionForm
             onAddTransaction={handleAddTransaction}
             categories={categories}
           />
         </div>
-        
-        <div className="right-column">
-          {renderRightColumn()}
-        </div>
+
+        <div className="right-column">{renderRightColumn()}</div>
       </div>
-      
-      <FloatingNav 
-        currentView={currentView}
-        onNavigate={setCurrentView}
-      />
+
+      <FloatingNav currentView={currentView} onNavigate={handleNavigate} />
     </div>
   );
 };

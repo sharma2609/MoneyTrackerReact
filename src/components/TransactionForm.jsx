@@ -1,57 +1,69 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from "react";
 
 /**
  * TransactionForm - Left column input form
  * Allows users to add new transactions with all required fields
+ * Optimized with React.memo and useCallback for event handlers
  */
-const TransactionForm = ({ onAddTransaction, categories }) => {
+const TransactionForm = React.memo(function TransactionForm({
+  onAddTransaction,
+  categories,
+}) {
   const [formData, setFormData] = useState({
-    title: '',
-    amount: '',
-    type: 'expense',
-    category: '',
-    date: new Date().toISOString().split('T')[0] // Default to today
+    title: "",
+    amount: "",
+    type: "expense",
+    category: "",
+    date: new Date().toISOString().split("T")[0], // Default to today
   });
 
-  const handleChange = (e) => {
+  // Memoize event handlers
+  const handleChange = useCallback((e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
-  };
+  }, []);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    
-    if (!formData.title || !formData.amount) {
-      alert('Please fill in all required fields');
-      return;
-    }
+  const handleTypeChange = useCallback((type) => {
+    setFormData((prev) => ({ ...prev, type }));
+  }, []);
 
-    const transaction = {
-      id: Date.now().toString(),
-      ...formData,
-      amount: parseFloat(formData.amount),
-      timestamp: new Date().toISOString()
-    };
+  const handleSubmit = useCallback(
+    (e) => {
+      e.preventDefault();
 
-    onAddTransaction(transaction);
+      if (!formData.title || !formData.amount) {
+        alert("Please fill in all required fields");
+        return;
+      }
 
-    // Reset form
-    setFormData({
-      title: '',
-      amount: '',
-      type: 'expense',
-      category: '',
-      date: new Date().toISOString().split('T')[0]
-    });
-  };
+      const transaction = {
+        id: Date.now().toString(),
+        ...formData,
+        amount: parseFloat(formData.amount),
+        timestamp: new Date().toISOString(),
+      };
+
+      onAddTransaction(transaction);
+
+      // Reset form
+      setFormData({
+        title: "",
+        amount: "",
+        type: "expense",
+        category: "",
+        date: new Date().toISOString().split("T")[0],
+      });
+    },
+    [formData, onAddTransaction]
+  );
 
   return (
     <div className="transaction-form">
       <h2 className="form-title">Add Transaction</h2>
-      
+
       <form onSubmit={handleSubmit}>
         <div className="form-group">
           <label htmlFor="title">Title / Description *</label>
@@ -86,15 +98,19 @@ const TransactionForm = ({ onAddTransaction, categories }) => {
           <div className="type-selector">
             <button
               type="button"
-              className={`type-btn ${formData.type === 'expense' ? 'active' : ''}`}
-              onClick={() => setFormData(prev => ({ ...prev, type: 'expense' }))}
+              className={`type-btn ${
+                formData.type === "expense" ? "active" : ""
+              }`}
+              onClick={() => handleTypeChange("expense")}
             >
               Expense
             </button>
             <button
               type="button"
-              className={`type-btn ${formData.type === 'income' ? 'active' : ''}`}
-              onClick={() => setFormData(prev => ({ ...prev, type: 'income' }))}
+              className={`type-btn ${
+                formData.type === "income" ? "active" : ""
+              }`}
+              onClick={() => handleTypeChange("income")}
             >
               Income
             </button>
@@ -110,8 +126,10 @@ const TransactionForm = ({ onAddTransaction, categories }) => {
             onChange={handleChange}
           >
             <option value="">Select a category (optional)</option>
-            {categories.map(cat => (
-              <option key={cat} value={cat}>{cat}</option>
+            {categories.map((cat) => (
+              <option key={cat} value={cat}>
+                {cat}
+              </option>
             ))}
           </select>
         </div>
@@ -134,6 +152,6 @@ const TransactionForm = ({ onAddTransaction, categories }) => {
       </form>
     </div>
   );
-};
+});
 
 export default TransactionForm;

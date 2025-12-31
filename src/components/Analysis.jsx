@@ -1,22 +1,63 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from "react";
 
-const Analysis = ({ transactions }) => {
-  const [viewType, setViewType] = useState('monthly'); // monthly or annual
+/**
+ * Analysis component - Financial analysis with category breakdown
+ * Optimized with React.memo and useCallback for event handlers
+ */
+const Analysis = React.memo(function Analysis({ transactions }) {
+  const [viewType, setViewType] = useState("monthly"); // monthly or annual
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
+  // Memoize months array to prevent recreation
+  const months = useMemo(
+    () => [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ],
+    []
+  );
+
+  // Memoize event handlers
+  const handleViewTypeChange = useCallback((type) => {
+    setViewType(type);
+  }, []);
+
+  const handleMonthChange = useCallback((e) => {
+    setSelectedMonth(Number(e.target.value));
+  }, []);
+
+  const handleYearChange = useCallback((e) => {
+    setSelectedYear(Number(e.target.value));
+  }, []);
+
   // Get unique years from transactions
   const availableYears = useMemo(() => {
-    const years = [...new Set(transactions.map(t => new Date(t.date).getFullYear()))];
+    const years = [
+      ...new Set(transactions.map((t) => new Date(t.date).getFullYear())),
+    ];
     return years.sort((a, b) => b - a);
   }, [transactions]);
 
   // Filter transactions based on view type
   const filteredTransactions = useMemo(() => {
-    return transactions.filter(t => {
+    return transactions.filter((t) => {
       const date = new Date(t.date);
-      if (viewType === 'monthly') {
-        return date.getMonth() === selectedMonth && date.getFullYear() === selectedYear;
+      if (viewType === "monthly") {
+        return (
+          date.getMonth() === selectedMonth &&
+          date.getFullYear() === selectedYear
+        );
       } else {
         return date.getFullYear() === selectedYear;
       }
@@ -26,19 +67,20 @@ const Analysis = ({ transactions }) => {
   // Calculate statistics
   const stats = useMemo(() => {
     const income = filteredTransactions
-      .filter(t => t.type === 'income')
+      .filter((t) => t.type === "income")
       .reduce((sum, t) => sum + t.amount, 0);
-    
+
     const expense = filteredTransactions
-      .filter(t => t.type === 'expense')
+      .filter((t) => t.type === "expense")
       .reduce((sum, t) => sum + t.amount, 0);
 
     // Category breakdown
     const categoryBreakdown = {};
     filteredTransactions
-      .filter(t => t.type === 'expense' && t.category)
-      .forEach(t => {
-        categoryBreakdown[t.category] = (categoryBreakdown[t.category] || 0) + t.amount;
+      .filter((t) => t.type === "expense" && t.category)
+      .forEach((t) => {
+        categoryBreakdown[t.category] =
+          (categoryBreakdown[t.category] || 0) + t.amount;
       });
 
     return {
@@ -46,14 +88,9 @@ const Analysis = ({ transactions }) => {
       expense,
       balance: income - expense,
       categoryBreakdown,
-      transactionCount: filteredTransactions.length
+      transactionCount: filteredTransactions.length,
     };
   }, [filteredTransactions]);
-
-  const months = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
-  ];
 
   return (
     <div className="analysis-container">
@@ -63,42 +100,50 @@ const Analysis = ({ transactions }) => {
       <div className="analysis-controls">
         <div className="view-type-selector">
           <button
-            className={`view-type-btn ${viewType === 'monthly' ? 'active' : ''}`}
-            onClick={() => setViewType('monthly')}
+            className={`view-type-btn ${
+              viewType === "monthly" ? "active" : ""
+            }`}
+            onClick={() => handleViewTypeChange("monthly")}
           >
             Monthly
           </button>
           <button
-            className={`view-type-btn ${viewType === 'annual' ? 'active' : ''}`}
-            onClick={() => setViewType('annual')}
+            className={`view-type-btn ${viewType === "annual" ? "active" : ""}`}
+            onClick={() => handleViewTypeChange("annual")}
           >
             Annual
           </button>
         </div>
 
         <div className="period-selectors">
-          {viewType === 'monthly' && (
+          {viewType === "monthly" && (
             <select
               value={selectedMonth}
-              onChange={(e) => setSelectedMonth(Number(e.target.value))}
+              onChange={handleMonthChange}
               className="period-select"
             >
               {months.map((month, idx) => (
-                <option key={idx} value={idx}>{month}</option>
+                <option key={idx} value={idx}>
+                  {month}
+                </option>
               ))}
             </select>
           )}
           <select
             value={selectedYear}
-            onChange={(e) => setSelectedYear(Number(e.target.value))}
+            onChange={handleYearChange}
             className="period-select"
           >
             {availableYears.length > 0 ? (
-              availableYears.map(year => (
-                <option key={year} value={year}>{year}</option>
+              availableYears.map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
               ))
             ) : (
-              <option value={new Date().getFullYear()}>{new Date().getFullYear()}</option>
+              <option value={new Date().getFullYear()}>
+                {new Date().getFullYear()}
+              </option>
             )}
           </select>
         </div>
@@ -137,15 +182,19 @@ const Analysis = ({ transactions }) => {
                   <div key={category} className="breakdown-item">
                     <div className="breakdown-info">
                       <span className="breakdown-category">{category}</span>
-                      <span className="breakdown-amount">${amount.toFixed(2)}</span>
+                      <span className="breakdown-amount">
+                        ${amount.toFixed(2)}
+                      </span>
                     </div>
                     <div className="breakdown-bar-container">
-                      <div 
-                        className="breakdown-bar" 
+                      <div
+                        className="breakdown-bar"
                         style={{ width: `${percentage}%` }}
                       ></div>
                     </div>
-                    <div className="breakdown-percentage">{percentage.toFixed(1)}%</div>
+                    <div className="breakdown-percentage">
+                      {percentage.toFixed(1)}%
+                    </div>
                   </div>
                 );
               })}
@@ -160,6 +209,6 @@ const Analysis = ({ transactions }) => {
       )}
     </div>
   );
-};
+});
 
 export default Analysis;

@@ -1,29 +1,44 @@
-import React, { useState } from 'react';
-import { useTheme } from '../contexts/ThemeContext';
+import React, { useState, useCallback } from "react";
+import { useTheme } from "../contexts/ThemeContext";
 
-const Settings = ({ categories, onUpdateCategories, onClearHistory }) => {
+/**
+ * Settings component - Theme toggle, category management, data clearing
+ * Optimized with React.memo and useCallback for event handlers
+ */
+const Settings = React.memo(function Settings({
+  categories,
+  onUpdateCategories,
+  onClearHistory,
+}) {
   const { theme, toggleTheme } = useTheme();
-  const [newCategory, setNewCategory] = useState('');
+  const [newCategory, setNewCategory] = useState("");
   const [showConfirm, setShowConfirm] = useState(false);
 
-  const handleAddCategory = (e) => {
-    e.preventDefault();
-    if (newCategory.trim() && !categories.includes(newCategory.trim())) {
-      onUpdateCategories([...categories, newCategory.trim()]);
-      setNewCategory('');
-    }
-  };
+  // Memoize event handlers
+  const handleAddCategory = useCallback(
+    (e) => {
+      e.preventDefault();
+      if (newCategory.trim() && !categories.includes(newCategory.trim())) {
+        onUpdateCategories([...categories, newCategory.trim()]);
+        setNewCategory("");
+      }
+    },
+    [newCategory, categories, onUpdateCategories]
+  );
 
-  const handleDeleteCategory = (category) => {
-    onUpdateCategories(categories.filter(c => c !== category));
-  };
+  const handleDeleteCategory = useCallback(
+    (category) => {
+      onUpdateCategories(categories.filter((c) => c !== category));
+    },
+    [categories, onUpdateCategories]
+  );
 
-  const handleClearHistory = () => {
+  const handleClearHistory = useCallback(() => {
     if (showConfirm) {
       onClearHistory();
       setShowConfirm(false);
     }
-  };
+  }, [showConfirm, onClearHistory]);
 
   return (
     <div className="settings-container">
@@ -39,13 +54,15 @@ const Settings = ({ categories, onUpdateCategories, onClearHistory }) => {
               Switch between light and dark mode
             </div>
           </div>
-          <button 
+          <button
             className={`theme-toggle ${theme}`}
             onClick={toggleTheme}
             aria-label="Toggle theme"
           >
             <span className="toggle-slider"></span>
-            <span className="toggle-label">{theme === 'dark' ? 'Dark' : 'Light'}</span>
+            <span className="toggle-label">
+              {theme === "dark" ? "Dark" : "Light"}
+            </span>
           </button>
         </div>
       </div>
@@ -62,12 +79,14 @@ const Settings = ({ categories, onUpdateCategories, onClearHistory }) => {
               placeholder="Add new category"
               className="category-input"
             />
-            <button type="submit" className="add-category-btn">Add</button>
+            <button type="submit" className="add-category-btn">
+              Add
+            </button>
           </form>
         </div>
 
         <div className="category-list">
-          {categories.map(category => (
+          {categories.map((category) => (
             <div key={category} className="category-item">
               <span className="category-name">{category}</span>
               <button
@@ -93,21 +112,18 @@ const Settings = ({ categories, onUpdateCategories, onClearHistory }) => {
             </div>
           </div>
           {!showConfirm ? (
-            <button 
-              className="danger-btn"
-              onClick={() => setShowConfirm(true)}
-            >
+            <button className="danger-btn" onClick={() => setShowConfirm(true)}>
               Clear History
             </button>
           ) : (
             <div className="confirm-actions">
-              <button 
+              <button
                 className="danger-btn confirm"
                 onClick={handleClearHistory}
               >
                 Confirm Delete
               </button>
-              <button 
+              <button
                 className="cancel-btn"
                 onClick={() => setShowConfirm(false)}
               >
@@ -119,6 +135,6 @@ const Settings = ({ categories, onUpdateCategories, onClearHistory }) => {
       </div>
     </div>
   );
-};
+});
 
 export default Settings;

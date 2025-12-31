@@ -1,24 +1,36 @@
-import React from 'react';
+import React, { useCallback } from "react";
 
 /**
  * Floating vertical navigation bar
  * Fixed on the far right edge, mid-screen aligned
+ * Optimized with React.memo and useCallback
  */
-const FloatingNav = ({ currentView, onNavigate }) => {
+const FloatingNav = React.memo(function FloatingNav({
+  currentView,
+  onNavigate,
+}) {
   const navItems = [
-    { id: 'overview', label: 'Overview', icon: '◉' },
-    { id: 'analysis', label: 'Analysis', icon: '◐' },
-    { id: 'reports', label: 'Reports', icon: '⬇' },
-    { id: 'settings', label: 'Settings', icon: '⚙' }
+    { id: "overview", label: "Overview", icon: "●" },
+    { id: "analysis", label: "Analysis", icon: "◐" },
+    { id: "reports", label: "Reports", icon: "⬇" },
+    { id: "settings", label: "Settings", icon: "⚙" },
   ];
+
+  // Memoize navigation handler
+  const handleNavigate = useCallback(
+    (itemId) => {
+      onNavigate(itemId);
+    },
+    [onNavigate]
+  );
 
   return (
     <nav className="floating-nav">
-      {navItems.map(item => (
+      {navItems.map((item) => (
         <button
           key={item.id}
-          onClick={() => onNavigate(item.id)}
-          className={`nav-item ${currentView === item.id ? 'active' : ''}`}
+          onClick={() => handleNavigate(item.id)}
+          className={`nav-item ${currentView === item.id ? "active" : ""}`}
           title={item.label}
           aria-label={item.label}
         >
@@ -27,6 +39,6 @@ const FloatingNav = ({ currentView, onNavigate }) => {
       ))}
     </nav>
   );
-};
+});
 
 export default FloatingNav;
