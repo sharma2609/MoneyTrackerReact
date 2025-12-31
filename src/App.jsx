@@ -1,52 +1,129 @@
-import React, { useState } from "react";
-import Balance from "./components/Balance";
-import TransactionForm from "./components/TransactionForm";
-import TransactionList from "./components/TransactionList";
-import TransactionChart from "./components/TransactionChart";
-import "./styles/styles.css";
+import React, { useState, useMemo } from 'react';
+import FloatingNav from './components/FloatingNav';
+import TransactionForm from './components/TransactionForm';
+import TransactionList from './components/TransactionList';
+import Summary from './components/Summary';
+import Analysis from './components/Analysis';
+import Reports from './components/Reports';
+import Settings from './components/Settings';
+import { useLocalStorage } from './hooks/useLocalStorage';
+import './App.css';
 
+/**
+ * Main App Component
+ * Two-column layout: Left = Input Form, Right = Display/Navigation
+ */
 const App = () => {
-  const [transactions, setTransactions] = useState([]);
-  const [activePage, setActivePage] = useState("home");
+  // Persist transactions and categories in localStorage
+  const [transactions, setTransactions] = useLocalStorage('transactions', []);
+  const [categories, setCategories] = useLocalStorage('categories', [
+    'Food & Dining',
+    'Transportation',
+    'Shopping',
+    'Entertainment',
+    'Bills & Utilities',
+    'Healthcare',
+    'Salary',
+    'Investment',
+    'Other'
+  ]);
+  const [currentView, setCurrentView] = useState('overview');
 
-  const addTransaction = (transaction) => {
-    setTransactions([...transactions, transaction]);
+  // Add new transaction
+  const handleAddTransaction = (transaction) => {
+    setTransactions([transaction, ...transactions]);
   };
 
-  const removeTransaction = (id) => {
-    setTransactions(
-      transactions.filter((transaction) => transaction.id !== id)
-    );
+  // Delete transaction
+  const handleDeleteTransaction = (id) => {
+    setTransactions(transactions.filter(t => t.id !== id));
   };
 
-  const renderPage = () => {
-    switch (activePage) {
-      case "add":
-        return <TransactionForm addTransaction={addTransaction} />;
-      case "history":
+  // Clear all transactions
+  const handleClearHistory = () => {
+    setTransactions([]);
+  };
+
+  // Get current month's name
+  const currentMonthName = useMemo(() => {
+    const months = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    return months[new Date().getMonth()];
+  }, []);
+
+  // Filter current month transactions
+  const currentMonthTransactions = useMemo(() => {
+    const now = new Date();
+    return transactions.filter(t => {
+      const date = new Date(t.date);
+      return date.getMonth() === now.getMonth() && 
+             date.getFullYear() === now.getFullYear();
+    });
+  }, [transactions]);
+
+  // Render right column content based on current view
+  const renderRightColumn = () => {
+    switch (currentView) {
+      case 'overview':
         return (
-          <TransactionList
-            transactions={transactions}
-            removeTransaction={removeTransaction}
+          <>
+            <div className="view-header">
+              <h2 className="view-title">{currentMonthName} Overview</h2>
+              <p className="view-subtitle">Current month at a glance</p>
+            </div>
+            <Summary transactions={currentMonthTransactions} />
+            <TransactionList 
+              transactions={currentMonthTransactions}
+              onDeleteTransaction={handleDeleteTransaction}
+            />
+          </>
+        );
+      
+      case 'analysis':
+        return <Analysis transactions={transactions} />;
+      
+      case 'reports':
+        return <Reports transactions={transactions} />;
+      
+      case 'settings':
+        return (
+          <Settings 
+            categories={categories}
+            onUpdateCategories={setCategories}
+            onClearHistory={handleClearHistory}
           />
         );
-      case "chart":
-        return <TransactionChart transactions={transactions} />;
+      
       default:
-        return <TransactionForm addTransaction={addTransaction} />; // Home page
+        return null;
     }
   };
 
   return (
     <div className="app">
-      <nav className="sidebar">
-        <button onClick={() => setActivePage("add")}>Add Transaction</button>
-        <button onClick={() => setActivePage("history")}>
-          Transaction History
-        </button>
-        <button onClick={() => setActivePage("chart")}>Chart</button>
-      </nav>
-      <div className="container">{renderPage()}</div>
+      <header className="app-header">
+        <h1 className="app-title">Money Tracker</h1>
+      </header>
+      
+      <div className="main-content">
+        <div className="left-column">
+          <TransactionForm 
+            onAddTransaction={handleAddTransaction}
+            categories={categories}
+          />
+        </div>
+        
+        <div className="right-column">
+          {renderRightColumn()}
+        </div>
+      </div>
+      
+      <FloatingNav 
+        currentView={currentView}
+        onNavigate={setCurrentView}
+      />
     </div>
   );
 };
