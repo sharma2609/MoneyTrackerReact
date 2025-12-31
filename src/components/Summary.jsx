@@ -26,12 +26,12 @@ const Summary = React.memo(function Summary({ transactions }) {
     <div className="summary">
       <div className="summary-card">
         <div className="summary-label">Total Income</div>
-        <div className="summary-value income">+${income.toFixed(2)}</div>
+        <div className="summary-value income">${income.toFixed(2)}</div>
       </div>
 
       <div className="summary-card">
         <div className="summary-label">Total Expense</div>
-        <div className="summary-value expense">-${expense.toFixed(2)}</div>
+        <div className="summary-value expense">${expense.toFixed(2)}</div>
       </div>
 
       <div className="summary-card balance-card">

@@ -33,16 +33,16 @@ const App = () => {
   // Memoize event handlers to prevent child re-renders
   const handleAddTransaction = useCallback(
     (transaction) => {
-      setTransactions([transaction, ...transactions]);
+      setTransactions((prev) => [transaction, ...prev]);
     },
-    [transactions, setTransactions]
+    [setTransactions]
   );
 
   const handleDeleteTransaction = useCallback(
     (id) => {
-      setTransactions(transactions.filter((t) => t.id !== id));
+      setTransactions((prev) => prev.filter((t) => t.id !== id));
     },
-    [transactions, setTransactions]
+    [setTransactions]
   );
 
   const handleClearHistory = useCallback(() => {

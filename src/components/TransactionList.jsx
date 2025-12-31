@@ -68,8 +68,7 @@ const TransactionList = React.memo(function TransactionList({
 
               <div className="transaction-amount-wrapper">
                 <div className={`transaction-amount ${transaction.type}`}>
-                  {transaction.type === "income" ? "+" : "-"}$
-                  {transaction.amount.toFixed(2)}
+                  ${transaction.amount.toFixed(2)}
                 </div>
                 <button
                   onClick={() => handleDelete(transaction.id)}
